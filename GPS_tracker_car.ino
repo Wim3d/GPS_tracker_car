@@ -33,8 +33,8 @@ Timezone CE(CEST, CET);
 #define NOTOKLED 10
 #define A6ACTIONLED 12
 
-// variables for the incoming phone numbers
-char phone_number[12] = "31610778730";
+// variables for the receiving phone numbers
+char phone_number[12] = "###########"; //no +, landcode & phone number
 char received[13];
 
 int uploadcounter = 0;
@@ -141,8 +141,8 @@ void loop()
       tempsmsflag2 = false;
     }
   }
-
-  if (sendATcommand("", "+CLIP", 1000) == 1)  // if the module is called, "+CLIP" is in the serial communication
+  //detect whether the module is phoned
+  if (sendATcommand("", "+CLIP", 1000) == 1)  // when to is phoned, "+CLIP" is in the serial output of the A6 
   {
     incoming = true;
   }
@@ -169,7 +169,7 @@ void loop()
     for (byte i = 0; i < 11; i++) {
       phone_number[i] = received[i + j];
     }
-    int8_t answer2 = sendATcommand("", "ERROR", 1000);  //checks whether the caller hang up (gives an "ERROR" message in the output of the A6 module)
+    int8_t answer2 = sendATcommand("", "ERROR", 1000);  //checks whether the caller hang up (gives an "ERROR" message in the serial output of the A6 module)
     calltime = 0;
     while (answer2 == 0 && calltime < maxtime)
     {
@@ -214,23 +214,25 @@ void A6start()
   }
   answer = 0;
   smartDelay(1000);
+  // enable caller ID displaying
   answer = sendATcommand("AT+CLIP=1", "OK", 1000);
   if (answer == 0)
   {
     // waits for an answer from the module
     while (answer == 0)
-    { // checks whether module is connected to network
+    { 
       answer = sendATcommand("AT+CLIP=1", "OK", 2000);
     }
   }
   answer = 0;
   smartDelay(1000);
+  //delete SMS messages from the module
   answer = sendATcommand("AT+CMGD=1,4", "OK", 1000);
   if (answer == 0)
   {
     // waits for an answer from the module
     while (answer == 0)
-    { // checks whether module is connected to network
+    {  
       sendATcommand("AT+CMGD=1,4", "OK", 5000);
     }
   }
@@ -241,7 +243,7 @@ void A6start()
   {
     // waits for an answer from the module
     while (answer == 0)
-    { // checks whether module is connected to network
+    { 
       answer = sendATcommand("ATE0", "OK", 1000);
     }
   }
@@ -327,7 +329,7 @@ void SendTextMessage(int alarm)
 
   if (alarm)
   {
-    A6Serial.print("Attention! Temperature of GPS tracker Auris = ");
+    A6Serial.print("Attention! Temperature of GPS tracker = ");
     A6Serial.print(temperature, 1);
     A6Serial.print(" C");
   }
@@ -374,7 +376,7 @@ void ThingspeakGSM(void)
 {
   digitalWrite(A6ACTIONLED, HIGH);
   String host = "api.thingspeak.com";
-  String write_api_key = "D1JMH8H99ZBWAVGB";
+  String write_api_key = "################"; // place your Thingspeak API key here
 
   //sendATcommand("AT+CIPSTATUS", "OK", 10000);
   //sendATcommand("AT+CGATT?", "OK", 20000);
@@ -397,7 +399,6 @@ void ThingspeakGSM(void)
   A6Serial.print("GET /update?api_key=");
   A6Serial.print(write_api_key);
   A6Serial.print("&field1=");
-  //kan dit zo, of moet er eerst een string van de variabelen vanuit de gps gemaakt worden?
   A6Serial.print(gps.location.lat(), 6);
   A6Serial.print("&field2=");
   A6Serial.print(gps.location.lng(), 6);
@@ -411,9 +412,6 @@ void ThingspeakGSM(void)
   A6Serial.println(temperature, 1);
   A6Serial.print("\r\n");
 
-  //A6Serial.println("HTTP/1.1 HOST: api.thingspeak.com");
-  //A6Serial.println("Connection: close");
-  //A6Serial.println("Content-Type: application/json");
   A6Serial.println("");
 
   //DebugSerial.print("GET /update?api_key=");
@@ -431,12 +429,8 @@ void ThingspeakGSM(void)
   //DebugSerial.print("\r\n");
   Serial.println("");
 
-  sendATcommand(end_c, "CIPRCV", 30000); //begin send data to remote server
-  //A6Serial.println(end_c); //sending ctrlZ
-  //unsigned long   entry = millis();
-  //sendATcommand("AT+CIPSTATUS", "OK", 10000);
-  //sendATcommand("AT+CIPCLOSE", "OK", 15000); //sending
-  //sendATcommand("AT+CIPSTATUS", "OK", 10000);
+  sendATcommand(end_c, "CIPRCV", 30000); //begin send data to remote server and wait
+
   smartDelay(2000);
   Serial.println("-------------------------End------------------------------");
   //DebugSerial.println("wait for incoming call");
