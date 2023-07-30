@@ -1,6 +1,6 @@
 /*
    Written by W. Hoogervorst
-   January 2019
+   January 2019 (version 13)
    Arduino Pro mini 5V 328
 */
 
